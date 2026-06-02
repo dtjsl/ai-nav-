@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI导航 - AI工具导航站</title>
+<style>
+  /* ========== Reset & Base ========== */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0d0f18;
+    --surface: #151724;
+    --surface2: #1c1f2e;
+    --border: #252836;
+    --text: #e2e4ed;
+    --text2: #8b8fa6;
+    --text3: #5b5f76;
+    --accent: #4fe0b6;
+    --accent2: #38bdf8;
+    --accent-dim: rgba(79,224,182,.12);
+    --radius: 12px;
+    --radius-sm: 8px;
+    --shadow: 0 2px 16px rgba(0,0,0,.4);
+    --transition: .2s ease;
+  }
+
+  html { scroll-behavior: smooth; font-size: 15px; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
+    min-height: 100vh;
+  }
+
+  a { color: inherit; text-decoration: none; }
+
+  /* ========== Header ========== */
+  .header {
+    position: sticky; top: 0; z-index: 100;
+    background: rgba(13,15,24,.85); backdrop-filter: blur(16px);
+    border-bottom: 1px solid var(--border);
+    padding: 0 24px; height: 60px;
+    display: flex; align-items: center; gap: 20px;
+  }
+  .header .logo {
+    font-size: 1.35rem; font-weight: 800; letter-spacing: -.02em;
+    display: flex; align-items: center; gap: 8px; white-space: nowrap;
+  }
+  .header .logo .icon { color: var(--accent); font-size: 1.5rem; }
+  .header .search-wrap {
+    flex: 1; max-width: 480px; position: relative;
+  }
+  .header .search-wrap input {
+    width: 100%; padding: 10px 44px 10px 16px;
+    background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 24px; color: var(--text); font-size: .9rem;
+    outline: none; transition: var(--transition);
+  }
+  .header .search-wrap input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-dim); }
+  .header .search-wrap .search-icon {
+    position: absolute; right: 14px; top: 50%; transform: translateY(-50%);
+    color: var(--text3); font-size: 1.1rem; pointer-events: none;
+  }
+  .header .header-links { display: flex; gap: 12px; align-items: center; }
+  .header .header-links a { color: var(--text2); font-size: .85rem; transition: var(--transition); white-space: nowrap; }
+  .header .header-links a:hover { color: var(--text); }
+
+  /* ========== Top Banner Ad ========== */
+  .top-banner {
+    max-width: 1280px; margin: 16px auto 0; padding: 0 24px;
+  }
+  .ad-slot {
+    display: flex; align-items: center; justify-content: center;
+    min-height: 90px;
+    border: 2px dashed var(--border); border-radius: var(--radius);
+    background: var(--surface); color: var(--text3);
+    font-size: .85rem; letter-spacing: .04em;
+    transition: var(--transition);
+  }
+  .ad-slot:hover { border-color: var(--accent-dim); color: var(--text2); }
+  .ad-slot.top { min-height: 90px; }
+  .ad-slot.sidebar { min-height: 250px; flex-direction: column; gap: 6px; }
+
+  /* ========== Main Layout ========== */
+  .main {
+    max-width: 1280px; margin: 20px auto; padding: 0 24px;
+    display: grid;
+    grid-template-columns: 200px 1fr 300px;
+    gap: 20px;
+  }
+
+  /* ========== Left Sidebar (Categories) ========== */
+  .left-sidebar { position: sticky; top: 80px; align-self: start; }
+  .cat-list { display: flex; flex-direction: column; gap: 2px; }
+  .cat-item {
+    padding: 10px 14px; border-radius: var(--radius-sm);
+    color: var(--text2); font-size: .9rem; cursor: pointer;
+    transition: var(--transition); display: flex; align-items: center; gap: 10px;
+    border: 1px solid transparent; user-select: none;
+  }
+  .cat-item:hover { background: var(--surface2); color: var(--text); }
+  .cat-item.active { background: var(--accent-dim); color: var(--accent); border-color: rgba(79,224,182,.25); font-weight: 600; }
+  .cat-item .emoji { font-size: 1.1rem; width: 24px; text-align: center; }
+  .cat-count { margin-left: auto; font-size: .75rem; color: var(--text3); background: var(--surface2); padding: 2px 8px; border-radius: 10px; }
+  .cat-item.active .cat-count { background: rgba(79,224,182,.2); color: var(--accent); }
+
+  /* Sidebar ad inside left sidebar */
+  .left-sidebar .ad-slot { margin-top: 16px; min-height: 200px; }
+
+  /* ========== Tool Grid ========== */
+  .tool-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 14px; align-content: start;
+  }
+  .no-results {
+    grid-column: 1/-1; text-align: center; padding: 60px 20px;
+    color: var(--text3);
+  }
+  .tool-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 20px;
+    transition: var(--transition); display: flex; flex-direction: column; gap: 10px;
+    position: relative; overflow: hidden;
+  }
+  .tool-card:hover {
+    border-color: var(--accent-dim); transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(0,0,0,.5);
+  }
+  .tool-card .card-header { display: flex; align-items: center; gap: 12px; }
+  .tool-card .card-icon {
+    width: 42px; height: 42px; border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.3rem; flex-shrink: 0;
+  }
+  .tool-card .card-name { font-weight: 700; font-size: 1rem; }
+  .tool-card .card-desc { color: var(--text2); font-size: .82rem; line-height: 1.5; flex: 1; }
+  .tool-card .card-tags { display: flex; gap: 6px; flex-wrap: wrap; }
+  .tool-card .card-tag {
+    font-size: .7rem; padding: 3px 10px; border-radius: 10px;
+    background: var(--accent-dim); color: var(--accent); white-space: nowrap;
+  }
+  .tool-card .card-tag.paid { background: rgba(248,184,56,.15); color: #f8b838; }
+  .tool-card .card-tag.free { background: rgba(56,216,120,.15); color: #38d878; }
+  .tool-card .card-link {
+    margin-top: auto; text-align: center;
+    padding: 8px; border-radius: var(--radius-sm);
+    background: var(--surface2); color: var(--accent);
+    font-size: .82rem; font-weight: 600; transition: var(--transition);
+    border: 1px solid transparent;
+  }
+  .tool-card .card-link:hover { background: var(--accent-dim); border-color: rgba(79,224,182,.3); }
+
+  /* ========== Right Sidebar (Ads) ========== */
+  .right-sidebar { position: sticky; top: 80px; align-self: start; display: flex; flex-direction: column; gap: 16px; }
+
+  /* ========== Footer ========== */
+  .footer {
+    text-align: center; padding: 32px 24px; color: var(--text3);
+    font-size: .8rem; border-top: 1px solid var(--border);
+    margin-top: 40px;
+  }
+  .footer a { color: var(--accent); }
+
+  /* ========== Mobile Toggle ========== */
+  .mobile-cat-toggle {
+    display: none;
+    padding: 10px 16px; background: var(--surface2); border: 1px solid var(--border);
+    border-radius: var(--radius-sm); color: var(--text); font-size: .9rem;
+    cursor: pointer; align-items: center; gap: 8px; margin-bottom: 12px;
+  }
+
+  /* ========== Responsive ========== */
+  @media (max-width: 1024px) {
+    .main { grid-template-columns: 180px 1fr 240px; gap: 14px; }
+  }
+  @media (max-width: 860px) {
+    .main { grid-template-columns: 1fr; }
+    .left-sidebar, .right-sidebar, .top-banner { display: none; }
+    .mobile-cat-toggle { display: flex; }
+    .left-sidebar.mobile-open { display: block; position: static; margin-bottom: 16px; }
+    .left-sidebar.mobile-open .ad-slot { display: none; }
+    .right-sidebar.mobile-show { display: flex; flex-direction: row; gap: 12px; overflow-x: auto; }
+    .right-sidebar.mobile-show .ad-slot { min-width: 250px; min-height: 150px; flex-shrink: 0; }
+    .header .header-links a.hide-mobile { display: none; }
+    .header { padding: 0 16px; gap: 12px; }
+    .header .search-wrap { max-width: 280px; }
+  }
+  @media (max-width: 480px) {
+    .tool-grid { grid-template-columns: 1fr; }
+    .header .logo span { font-size: 1rem; }
+    .header .search-wrap { max-width: 180px; }
+    .header .search-wrap input { padding: 8px 36px 8px 12px; font-size: .82rem; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ========== Header ========== -->
+<header class="header">
+  <a href="#" class="logo"><span class="icon">⚡</span><span>AI导航</span></a>
+  <div class="search-wrap">
+    <input type="text" id="searchInput" placeholder="搜索 AI 工具..." autocomplete="off">
+    <span class="search-icon">🔍</span>
+  </div>
+  <div class="header-links">
+    <a href="#" class="hide-mobile">提交工具</a>
+    <a href="#">关于</a>
+  </div>
+</header>
+
+<!-- ========== Top Banner Ad ========== -->
+<div class="top-banner">
+  <div class="ad-slot top">📢 广告位 — 728×90 — 合作联系：ads@ainav.example.com</div>
+</div>
+
+<!-- ========== Mobile Category Toggle ========== -->
+<button class="mobile-cat-toggle" id="mobileCatToggle">📂 全部分类</button>
+
+<!-- ========== Main ========== -->
+<div class="main">
+
+  <!-- Left Sidebar -->
+  <aside class="left-sidebar" id="leftSidebar">
+    <nav class="cat-list" id="catList">
+      <!-- Populated by JS -->
+    </nav>
+    <div class="ad-slot sidebar" style="margin-top:16px;">📢 广告位<br>300×250</div>
+  </aside>
+
+  <!-- Tool Grid -->
+  <section class="tool-grid" id="toolGrid">
+    <!-- Populated by JS -->
+  </section>
+
+  <!-- Right Sidebar Ads -->
+  <aside class="right-sidebar" id="rightSidebar">
+    <div class="ad-slot sidebar">📢 广告位<br>300×250</div>
+    <div class="ad-slot sidebar">📢 广告位<br>300×250</div>
+    <div class="ad-slot sidebar">📢 广告位<br>300×250</div>
+  </aside>
+</div>
+
+<!-- ========== Footer ========== -->
+<footer class="footer">
+  <p>AI导航 © 2026 · 收录 AI 工具 <span id="totalCount">0</span> 个 · <a href="#">提交工具</a> · <a href="#">广告合作</a></p>
+</footer>
+
+<script>
+(function() {
+  // ========== Tool Data ==========
+  const tools = [
+    // ---- 大模型 / 对话 ----
+    { name: 'ChatGPT',        icon: '🤖', cat: 'chat',   desc: 'OpenAI 旗舰对话模型，支持 GPT-4o、插件、联网、图像生成',                   tags: ['付费','热门'], url: 'https://chat.openai.com' },
+    { name: 'Claude',         icon: '🧠', cat: 'chat',   desc: 'Anthropic 的对话 AI，擅长长文写作与代码，Artifacts 实时预览',               tags: ['付费','热门'], url: 'https://claude.ai' },
+    { name: 'DeepSeek',       icon: '🐳', cat: 'chat',   desc: '国产开源大模型，DeepSeek-V3/R1，推理能力突出，性价比极高',                  tags: ['免费','开源'], url: 'https://chat.deepseek.com' },
+    { name: 'Gemini',         icon: '💎', cat: 'chat',   desc: 'Google 多模态模型，原生多模态理解，深度集成 Google 生态',                   tags: ['免费'],        url: 'https://gemini.google.com' },
+    { name: 'Kimi',           icon: '🌙', cat: 'chat',   desc: '月之暗面出品，超长上下文窗口，支持 200 万字，文件理解出色',                  tags: ['免费'],        url: 'https://kimi.moonshot.cn' },
+    { name: '通义千问',       icon: '☁️', cat: 'chat',   desc: '阿里云出品，支持多轮对话、代码、翻译，与阿里生态深度打通',                  tags: ['免费'],        url: 'https://tongyi.aliyun.com' },
+    { name: '豆包',           icon: '🫘', cat: 'chat',   desc: '字节跳动 AI 助手，支持网页/App，集成抖音生态，速度快',                      tags: ['免费'],        url: 'https://www.doubao.com' },
+    { name: '文心一言',       icon: '📘', cat: 'chat',   desc: '百度出品，ERNIE 系列模型，文生图能力突出，企业级应用',                      tags: ['免费'],        url: 'https://yiyan.baidu.com' },
+    { name: 'Poe',            icon: '🦉', cat: 'chat',   desc: '聚合多个 AI 模型平台，一站式体验 ChatGPT/Claude/Gemini 等',                tags: ['付费'],        url: 'https://poe.com' },
+    { name: 'Grok',           icon: '⚡', cat: 'chat',   desc: 'xAI 出品的实时对话 AI，幽默风格，可通过 X 平台使用',                        tags: ['付费'],        url: 'https://x.ai' },
+
+    // ---- AI 图像 / 设计 ----
+    { name: 'Midjourney',     icon: '🎨', cat: 'image',  desc: 'AI 图像生成标杆，画质顶级，通过 Discord 使用，v6 模型效果惊艳',            tags: ['付费','热门'], url: 'https://www.midjourney.com' },
+    { name: 'DALL·E 3',       icon: '🖼️', cat: 'image',  desc: 'OpenAI 图像生成，集成在 ChatGPT 中，文字渲染准确度高',                     tags: ['付费'],        url: 'https://openai.com/dall-e-3' },
+    { name: 'Stable Diffusion',icon:'🎯', cat: 'image',  desc: '开源图像生成模型，可本地部署，社区生态丰富，ControlNet 精准控制',           tags: ['免费','开源'], url: 'https://stability.ai' },
+    { name: 'Leonardo AI',    icon: '🦁', cat: 'image',  desc: '游戏资产向 AI 图像生成，模型丰富，适合角色与场景设计',                      tags: ['免费'],        url: 'https://leonardo.ai' },
+    { name: '通义万相',       icon: '🖌️', cat: 'image',  desc: '阿里云 AI 图像/视频生成，中文理解出色，支持多种风格',                      tags: ['免费'],        url: 'https://tongyi.aliyun.com/wanxiang' },
+    { name: 'Remove.bg',      icon: '✂️',  cat: 'image',  desc: 'AI 一键抠图去背景，速度快精度高，API 支持批量处理',                        tags: ['免费'],        url: 'https://www.remove.bg' },
+    { name: 'Canva AI',       icon: '📐', cat: 'image',  desc: 'Canva 内置 AI 设计工具，Magic Design 一键生成海报/PPT/社媒图',             tags: ['免费'],        url: 'https://www.canva.com' },
+
+    // ---- AI 视频 ----
+    { name: 'Sora',           icon: '🎬', cat: 'video',  desc: 'OpenAI 文本生成视频模型，物理世界模拟，视频质量革命性',                     tags: ['付费','热门'], url: 'https://sora.com' },
+    { name: 'Runway',         icon: '🎥', cat: 'video',  desc: '专业 AI 视频编辑与生成，Gen-3 模型，视频风格迁移/抠像/跟踪',               tags: ['付费'],        url: 'https://runwayml.com' },
+    { name: 'Pika',           icon: '✨',  cat: 'video',  desc: '轻量级 AI 视频生成，操作简单，lip-sync 口型同步，创意效果',                tags: ['免费'],        url: 'https://pika.art' },
+    { name: 'HeyGen',         icon: '🎙️', cat: 'video',  desc: 'AI 数字人视频生成，照片驱动说话，多语言口型同步，商业级质量',              tags: ['付费'],        url: 'https://www.heygen.com' },
+    { name: '剪映 AI',        icon: '✂️',  cat: 'video',  desc: '字节旗下剪映的 AI 功能集，图文成片/智能字幕/AI 配音一站式',               tags: ['免费'],        url: 'https://www.jianying.com' },
+    { name: 'CapCut',         icon: '📱', cat: 'video',  desc: '剪映国际版，TikTok 官方编辑工具，AI 特效和模板丰富',                       tags: ['免费'],        url: 'https://www.capcut.com' },
+
+    // ---- AI 编程 ----
+    { name: 'GitHub Copilot', icon: '🤝', cat: 'code',   desc: 'GitHub 出品 AI 编程助手，IDE 内联补全，支持所有主流编辑器',                 tags: ['付费','热门'], url: 'https://github.com/features/copilot' },
+    { name: 'Cursor',         icon: '🏹', cat: 'code',   desc: 'AI-first 代码编辑器，基于 VS Code，上下文理解深度优秀',                     tags: ['免费'],        url: 'https://cursor.sh' },
+    { name: 'Windsurf',       icon: '🌊', cat: 'code',   desc: 'Codeium 出品 AI IDE，Cascade 多文件编辑，Agent 模式自动完成任务',          tags: ['免费'],        url: 'https://codeium.com/windsurf' },
+    { name: 'v0 by Vercel',   icon: '🔺', cat: 'code',   desc: 'Vercel 出品 UI 生成工具，自然语言描述即可生成 React 组件代码',              tags: ['免费'],        url: 'https://v0.dev' },
+    { name: 'Bolt.new',       icon: '⚡', cat: 'code',   desc: 'StackBlitz 出品，浏览器内全栈应用生成，即时预览部署',                       tags: ['免费'],        url: 'https://bolt.new' },
+    { name: 'Replit Agent',   icon: '🔄', cat: 'code',   desc: 'Replit AI 代理，自然语言构建完整应用，云端运行免配置',                       tags: ['免费'],        url: 'https://replit.com' },
+    { name: 'Tabnine',        icon: '9️⃣', cat: 'code',   desc: '老牌 AI 代码补全，支持本地模型隐私模式，企业级安全合规',                    tags: ['免费'],        url: 'https://www.tabnine.com' },
+
+    // ---- AI 写作 / 办公 ----
+    { name: 'Notion AI',      icon: '📝', cat: 'writing',desc: 'Notion 内置 AI，自动总结/续写/翻译/头脑风暴，无缝融入笔记工作流',           tags: ['付费'],        url: 'https://www.notion.so/product/ai' },
+    { name: 'Jasper',         icon: '✍️',  cat: 'writing',desc: '营销文案 AI，品牌声音定制，多语言支持，SEO 优化内容生成',                  tags: ['付费'],        url: 'https://www.jasper.ai' },
+    { name: 'Grammarly',      icon: '✅',  cat: 'writing',desc: 'AI 语法检查与润色，浏览器扩展/桌面端全覆盖，学术写作必备',                  tags: ['免费'],        url: 'https://www.grammarly.com' },
+    { name: '秘塔写作猫',     icon: '🐱', cat: 'writing',desc: '中文 AI 写作辅助，纠错/润色/续写，支持多种文体，中文理解力强',               tags: ['免费'],        url: 'https://xiezuocat.com' },
+    { name: 'Gamma',          icon: '📊', cat: 'writing',desc: 'AI 演示文稿生成，输入主题即可生成精美 PPT/文档/网页',                        tags: ['免费'],        url: 'https://gamma.app' },
+    { name: 'Perplexity',     icon: '🔮', cat: 'writing',desc: 'AI 搜索引擎+写作，实时联网检索并生成带引用的长文回答',                      tags: ['免费'],        url: 'https://www.perplexity.ai' },
+
+    // ---- AI 音频 / 语音 ----
+    { name: 'ElevenLabs',     icon: '🎧', cat: 'audio',  desc: 'AI 语音合成标杆，超逼真 TTS，声音克隆，多语言情感朗读',                     tags: ['付费','热门'], url: 'https://elevenlabs.io' },
+    { name: 'Suno',           icon: '🎵', cat: 'audio',  desc: 'AI 音乐生成，输入歌词/风格即可创作完整歌曲，v4 音质大幅提升',                tags: ['免费'],        url: 'https://suno.ai' },
+    { name: 'Udio',           icon: '🎶', cat: 'audio',  desc: 'AI 音乐创作平台，生成高保真音乐，支持 remix 和扩展',                         tags: ['免费'],        url: 'https://www.udio.com' },
+    { name: 'Murf AI',        icon: '🎤', cat: 'audio',  desc: 'AI 配音旁白生成，丰富的音色库，适合视频/课件/广告配音',                      tags: ['付费'],        url: 'https://murf.ai' },
+    { name: 'Otter.ai',       icon: '🦦', cat: 'audio',  desc: 'AI 会议记录，实时转录+摘要，支持 Zoom/Teams/Meet 集成',                      tags: ['免费'],        url: 'https://otter.ai' },
+
+    // ---- AI 搜索 / 效率 ----
+    { name: '秘塔 AI 搜索',   icon: '🔍', cat: 'search', desc: '中文 AI 搜索引擎，无广告直达答案，支持深度研究和思维导图',                  tags: ['免费'],        url: 'https://metaso.cn' },
+    { name: '天工 AI 搜索',   icon: '🌐', cat: 'search', desc: '昆仑万维出品，多模态 AI 搜索，支持图片/视频搜索，海量信息聚合',             tags: ['免费'],        url: 'https://www.tiangong.cn' },
+    { name: 'Phind',          icon: '💡', cat: 'search', desc: '面向开发者的 AI 搜索引擎，技术问答精准，代码示例丰富',                       tags: ['免费'],        url: 'https://www.phind.com' },
+    { name: 'You.com',        icon: '🌍', cat: 'search', desc: '隐私优先的 AI 搜索引擎，多模型切换，个性化搜索体验',                         tags: ['免费'],        url: 'https://you.com' },
+    { name: 'Monica',         icon: '🌟', cat: 'search', desc: '浏览器 AI 助手插件，Chat/搜索/总结/翻译全能，侧边栏交互',                    tags: ['免费'],        url: 'https://monica.im' },
+    { name: 'MaxAI',          icon: '🤖', cat: 'search', desc: '网页 AI 增强，一键总结/翻译/改写任何网页内容，支持多模型切换',               tags: ['免费'],        url: 'https://www.maxai.me' },
+  ];
+
+  // Category definitions
+  const categories = [
+    { key: 'all',    emoji: '📂', label: '全部' },
+    { key: 'chat',   emoji: '💬', label: '对话大模型' },
+    { key: 'image',  emoji: '🎨', label: '图像设计' },
+    { key: 'video',  emoji: '🎬', label: '视频生成' },
+    { key: 'code',   emoji: '💻', label: '编程工具' },
+    { key: 'writing',emoji: '📝', label: '写作办公' },
+    { key: 'audio',  emoji: '🎧', label: '音频语音' },
+    { key: 'search', emoji: '🔍', label: 'AI 搜索' },
+  ];
+
+  // Build category counts
+  const catCounts = {};
+  tools.forEach(t => { catCounts[t.cat] = (catCounts[t.cat] || 0) + 1; });
+  catCounts['all'] = tools.length;
+
+  // ========== DOM refs ==========
+  const catList    = document.getElementById('catList');
+  const toolGrid   = document.getElementById('toolGrid');
+  const searchInput= document.getElementById('searchInput');
+  const totalCount = document.getElementById('totalCount');
+  const catToggle  = document.getElementById('mobileCatToggle');
+  const leftSidebar= document.getElementById('leftSidebar');
+
+  let activeCat = 'all';
+
+  // ========== Render Category List ==========
+  function renderCategories() {
+    catList.innerHTML = categories.map(c => {
+      const cnt = catCounts[c.key] || 0;
+      const cls = c.key === activeCat ? 'active' : '';
+      return `<div class="cat-item ${cls}" data-cat="${c.key}">
+        <span class="emoji">${c.emoji}</span>${c.label}
+        <span class="cat-count">${cnt}</span>
+      </div>`;
+    }).join('');
+  }
+
+  // ========== Render Tool Cards ==========
+  function renderTools(filteredTools) {
+    if (filteredTools.length === 0) {
+      toolGrid.innerHTML = '<div class="no-results">🔍 没有找到匹配的工具，试试其他关键词</div>';
+      totalCount.textContent = '0';
+      return;
+    }
+    totalCount.textContent = filteredTools.length;
+    toolGrid.innerHTML = filteredTools.map(t => {
+      // Icon background colors per category
+      const bgColors = {
+        chat:    'linear-gradient(135deg, #6366f1, #8b5cf6)',
+        image:   'linear-gradient(135deg, #f472b6, #e879f9)',
+        video:   'linear-gradient(135deg, #fb923c, #f97316)',
+        code:    'linear-gradient(135deg, #38bdf8, #0ea5e9)',
+        writing: 'linear-gradient(135deg, #a78bfa, #7c3aed)',
+        audio:   'linear-gradient(135deg, #34d399, #10b981)',
+        search:  'linear-gradient(135deg, #fbbf24, #f59e0b)',
+      };
+      const bg = bgColors[t.cat] || bgColors.chat;
+      const tagsHtml = t.tags.map(tag => {
+        const tagClass = tag === '热门' ? 'paid' : (tag === '免费' ? 'free' : '');
+        return `<span class="card-tag ${tagClass}">${tag}</span>`;
+      }).join('');
+      return `
+        <div class="tool-card">
+          <div class="card-header">
+            <div class="card-icon" style="background:${bg};">${t.icon}</div>
+            <span class="card-name">${t.name}</span>
+          </div>
+          <p class="card-desc">${t.desc}</p>
+          <div class="card-tags">${tagsHtml}</div>
+          <a href="${t.url}" target="_blank" rel="noopener" class="card-link" onclick="trackClick('${t.name}')">访问网站 →</a>
+        </div>`;
+    }).join('');
+  }
+
+  function filterTools() {
+    const query = searchInput.value.toLowerCase().trim();
+    let filtered = activeCat === 'all' ? [...tools] : tools.filter(t => t.cat === activeCat);
+    if (query) {
+      filtered = filtered.filter(t =>
+        t.name.toLowerCase().includes(query) ||
+        t.desc.toLowerCase().includes(query) ||
+        t.tags.some(tag => tag.toLowerCase().includes(query))
+      );
+    }
+    renderTools(filtered);
+  }
+
+  // ========== Event: Category Click ==========
+  catList.addEventListener('click', e => {
+    const item = e.target.closest('.cat-item');
+    if (!item) return;
+    activeCat = item.dataset.cat;
+    renderCategories();
+    filterTools();
+    // Close mobile sidebar on selection
+    leftSidebar.classList.remove('mobile-open');
+  });
+
+  // ========== Event: Search ==========
+  searchInput.addEventListener('input', filterTools);
+
+  // ========== Mobile Category Toggle ==========
+  catToggle.addEventListener('click', () => {
+    leftSidebar.classList.toggle('mobile-open');
+  });
+
+  // ========== Analytics mock ==========
+  window.trackClick = function(name) {
+    console.log(`[Analytics] 点击工具: ${name}`);
+  };
+
+  // ========== Init ==========
+  renderCategories();
+  filterTools();
+})();
+</script>
+</body>
+</html>
